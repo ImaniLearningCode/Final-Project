@@ -1,0 +1,84 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+pd.set_option('display.max_columns', None)
+
+# Let start by assigning the csv file to the 'data' variable.
+data = pd.read_csv('spotify_data.csv')
+
+# Let get an idea of what the data is made up of and how much we have in total.
+print(data.describe())
+data.describe(include='all')
+print(data.info())
+
+
+# function to find the min and max in the popularity column
+def find_min_max_of_column(csv_file, column_name):
+    df = pd.read_csv(csv_file)
+    if column_name not in df.columns:
+        raise ValueError(f"column not found in file.")
+
+    column_values = df[column_name]
+
+    min_val = column_values.min()
+    max_val = column_values.max()
+
+    return min_val, max_val
+
+
+csv_file_path = "spotify_data.csv"
+column_name_to_find = "popularity"
+min_value, max_value = find_min_max_of_column(csv_file_path, column_name_to_find)
+print(f"Minimum {column_name_to_find}: {min_value}")
+print(f"Maximum {column_name_to_find}: {max_value}")
+
+
+# function to find songs in the top 10% of popularity
+filtered_data = data[data['popularity'] >= 90]
+print(filtered_data)
+
+# sort column
+def sort_csv_by_column(file_path, sort_column):
+    data = []
+    with open(file_path, 'r', newline='') as csvfile:
+        csv_reader = csv.reader(csvfile)
+        headers = next(csv_reader)
+        data = sorted(csv_reader, key=lambda row: row[headers.index(sort_column)])
+    return [headers] + data
+
+    csv_file_path = 'spotify_data.csv'
+sorted_data = sort_csv_by_column(csv_file_path, 'energy')
+print(sorted_data)
+
+# heatmap
+numerical_columns = ['danceability', 'energy', 'loudness', 'tempo', 'duration_ms',
+                     'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'popularity']
+
+data_numeric = data[numerical_columns]
+# calculate the correlation matrix
+correlation_matrix = data_numeric.corr()
+
+# heatmap features
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", vmin=-1, vmax=1)
+plt.title("Correlation Matrix Heatmap")
+plt.show()
+
+# Stacked BarChart, I used this to see If tempo really affects popularity ( it doesn't)
+num_bins = 10
+bin_feature = "tempo"
+bins = pd.cut(data[bin_feature], bins=num_bins)
+popularity_by_bin = data.groupby(bins)["popularity"].mean()
+
+# Same BarChart but the features
+plt.figure(figsize=(10, 6))
+popularity_by_bin.plot(kind='bar', stacked=True, color='skyblue', edgecolor='black')
+plt.xlabel(bin_feature.capitalize() + " Ranges")
+plt.ylabel("Average Popularity")
+plt.title("Popularity Distribution within " + bin_feature.capitalize() + " Ranges")
+plt.xticks(rotation=45)
+plt.grid(axis='y', linestyle='--')
+
+plt.tight_layout()
+plt.show()
